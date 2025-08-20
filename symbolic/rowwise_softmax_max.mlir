@@ -23,7 +23,8 @@ func.func @rowwise_softmax_max(%arg0: memref<?x?x?x?xf32>,     // Score tensor S
           %score_val = affine.load %arg0[%b, %h, %q, %k] : memref<?x?x?x?xf32>
           
           // Load current max value: M[b][h][q]
-          %max_val = affine.load %arg1[%b, %h, %q] : memref<?x?x?xf32>
+          // %max_val = affine.load %arg1[%b, %h, %q] : memref<?x?x?xf32>
+          %max_val = arith.constant 0.0 : f32
           
           // Compute maximum: M[b][h][q] = fmaxf(M[b][h][q], S[b][h][q][k])
           %new_max = arith.maximumf %max_val, %score_val : f32

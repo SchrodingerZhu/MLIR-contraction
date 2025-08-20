@@ -1,0 +1,61 @@
+# PDF output files
+*.pdf
+
+# LaTeX intermediate files
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.bbl
+*.blg
+*.bcf
+*.run.xml
+*.nav
+*.snm
+*.vrb
+
+# LaTeX temporary files
+*.tmp
+*.temp
+*~
+
+# Backup files
+*.bak
+*.backup
+
+# Editor temporary files
+*.swp
+*.swo
+*~
+
+# LaTeX beamer files
+*.nav
+*.snm
+*.vrb
+
+# BibTeX files
+*.bbl
+*.blg
+
+# MakeIndex files
+*.idx
+*.ind
+*.ilg
+
+# XeLaTeX/XeTeX files
+*.xdv
+
+# LuaLaTeX files
+*.synctex.gz
+
+# LaTeXmk files
+*.fdb_latexmk
+*.fls
+
+_minted
+*.synctex

@@ -47,7 +47,8 @@ func.func @constant_depthwise_conv2d(%arg0: memref<1x128x58x58xf32>,     // Inpu
               %weight_val = affine.load %arg1[%c, %kh, %kw] : memref<128x3x3xf32>
               
               // Load current output value: O[n][c][oh][ow]
-              %output_val = affine.load %arg2[%n, %c, %oh, %ow] : memref<1x128x56x56xf32>
+              // %output_val = affine.load %arg2[%n, %c, %oh, %ow] : memref<1x128x56x56xf32>
+              %output_val = arith.constant 0.0 : f32
               
               // Compute multiplication
               %mul = arith.mulf %input_val, %weight_val : f32

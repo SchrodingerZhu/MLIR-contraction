@@ -1,0 +1,464 @@
+\documentclass[conference]{article}
+\usepackage{minted}
+\usepackage{float}
+\title{Tensor Contractions}
+\begin{document}
+\maketitle
+
+\section{Matrix-Vector Contraction}
+\begin{minted}[breaklines]{c++}
+for (int i = 0; i < rows; ++i)
+  for (int j = 0; j < cols; ++j)
+    C[i] += A[i][j] * B[j];
+\end{minted}
+
+\section{Matrix-Matrix Contraction}
+\begin{minted}[breaklines]{c++}
+for (int i = 0; i < rows_A; ++i)
+  for (int k = 0; k < cols_B; ++k)
+    for (int j = 0; j < cols_A; ++j)
+      C[i][k] += A[i][j] * B[j][k];
+\end{minted}
+
+\section{3D Tensor-Vector Contraction}
+\begin{minted}[breaklines]{c++}
+for (int i = 0; i < dim1; ++i)
+  for (int j = 0; j < dim2; ++j)
+    for (int k = 0; k < dim3; ++k)
+      C[i][j] += A[i][j][k] * B[k];
+\end{minted}
+
+\section{4D Tensor Contraction}
+\begin{minted}[breaklines]{c++}
+for (int i = 0; i < dim_i; ++i)
+  for (int j = 0; j < dim_j; ++j)
+    for (int k = 0; k < dim_k; ++k)
+      for (int l = 0; l < dim_l; ++l)
+        C[i][j] += A[i][k][l][j] * B[k][l];
+\end{minted}
+
+\section{Batched GEMM}
+\begin{minted}[breaklines]{c++}
+for (int b = 0; b < batch_size; ++b)
+  for (int i = 0; i < M; ++i)
+    for (int j = 0; j < N; ++j)
+      for (int k = 0; k < K; ++k)
+        C[b][i][j] += A[b][i][k] * B[b][k][j];
+\end{minted}
+
+\section{Conv2D}
+\begin{minted}[breaklines]{c++}
+for (int n = 0; n < N; ++n)
+  for (int oc = 0; oc < OC; ++oc)
+    for (int ic = 0; ic < IC; ++ic)
+      for (int oh = 0; oh < OH; ++oh)
+        for (int ow = 0; ow < OW; ++ow)
+          for (int kh = 0; kh < KH; ++kh)
+            for (int kw = 0; kw < KW; ++kw)
+              O[n][oc][oh][ow] +=
+                I[n][ic][oh + kh][ow + kw] * W[oc][ic][kh][kw];
+\end{minted}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|c|c|l|}
+\hline
+Parameter & Value & Description \\
+\hline
+ N & 1 & Batch size \\
+IC & 32 & Input channels \\
+OC & 64 & Output channels \\
+OH & 28 & Output height \\
+OW & 28 & Output width \\
+KH & 3 & Kernel height \\
+KW & 3 & Kernel width \\
+\hline
+\end{tabular}
+\caption{Constant assignments for 2D convolution}
+\end{table}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|}
+    \hline
+    Reuse Interval & Portion \\ 
+    \hline
+    3 & 7.487e-1 \\ 
+    21 & 2.062e-1 \\ 
+    24 & 2.381e-2 \\ 
+    510 & 5.102e-3 \\ 
+    558 & 2.551e-3 \\ 
+    612 & 2.551e-3 \\ 
+    20955 & 3.844e-3 \\ 
+    21063 & 1.281e-3 \\ 
+    675645 & 2.453e-3 \\ 
+    675693 & 1.226e-3 \\ 
+    675747 & 1.226e-3 \\ 
+    676392 & 1.887e-4 \\ 
+    676440 & 9.434e-5 \\ 
+    676494 & 9.434e-5 \\ 
+    677139 & 1.887e-4 \\ 
+    677187 & 9.434e-5 \\ 
+    677241 & 9.434e-5 \\ 
+    42695643 & 1.116e-4 \\ 
+    42695751 & 3.720e-5 \\ 
+    43330917 & 1.276e-4 \\ 
+    \hline
+\end{tabular}
+\caption{Reuse Interval Distribution for Conv2D (block size 8)}
+\end{table}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|}
+    \hline
+    Reuse Interval & Portion \\ 
+    \hline
+    3 & 2.964e-1 \\ 
+    24 & 2.143e-1 \\ 
+    27 & 3.330e-1 \\ 
+    699 & 6.634e-2 \\ 
+    723 & 5.103e-3 \\ 
+    747 & 5.103e-3 \\ 
+    21144 & 3.589e-2 \\ 
+    675834 & 3.189e-2 \\ 
+    675858 & 2.453e-3 \\ 
+    675882 & 2.453e-3 \\ 
+    676581 & 2.453e-3 \\ 
+    676605 & 1.887e-4 \\ 
+    676629 & 1.887e-4 \\ 
+    677328 & 2.453e-3 \\ 
+    677352 & 1.887e-4 \\ 
+    677376 & 1.887e-4 \\ 
+    42695832 & 1.042e-3 \\ 
+    43330923 & 3.827e-4 \\ 
+    \hline
+\end{tabular}
+\caption{Reuse Interval Distribution for Conv2D (block size 1)}
+\end{table}
+
+
+\section{Depthwise Conv2D}
+\begin{minted}[breaklines]{c++}
+for (int n = 0; n < N; ++n)
+  for (int c = 0; c < C; ++c)
+    for (int oh = 0; oh < OH; ++oh)
+      for (int ow = 0; ow < OW; ++ow)
+        for (int kh = 0; kh < KH; ++kh)
+          for (int kw = 0; kw < KW; ++kw)
+            O[n][c][oh][ow] +=
+              I[n][c][oh + kh][ow + kw] * W[c][kh][kw];
+\end{minted}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|l|}
+\hline
+Parameter & Value & Description \\
+\hline
+N & 1 & Batch size \\
+C & 128 & Number of channels \\
+OH & 56 & Output height \\
+OW & 56 & Output width \\
+KH & 3 & Kernel height \\
+KW & 3 & Kernel width \\
+\hline
+\end{tabular}
+\caption{Constant assignments for depth-wise 2D convolution}
+\end{table}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|}
+    \hline
+    Reuse Interval & Portion \\ 
+    \hline
+    3 & 7.461e-1 \\ 
+    21 & 2.065e-1 \\ 
+    24 & 2.781e-2 \\ 
+    1266 & 7.803e-3 \\ 
+    1314 & 1.300e-3 \\ 
+    1476 & 1.300e-3 \\ 
+    10753365 & 3.192e-5 \\ 
+    10834773 & 3.447e-3 \\ 
+    10834821 & 5.746e-4 \\ 
+    10834983 & 5.746e-4 \\ 
+    10836276 & 1.277e-4 \\ 
+    10836324 & 2.128e-5 \\ 
+    10836486 & 2.128e-5 \\ 
+    10837779 & 1.277e-4 \\ 
+    10837803 & 4.171e-3 \\ 
+    10837827 & 2.128e-5 \\ 
+    10837989 & 2.128e-5 \\ 
+    \hline
+\end{tabular}
+\caption{Reuse Interval Distribution for Depthwise Conv2D (block size 8)}
+\end{table}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|}
+    \hline
+    Reuse Interval & Portion \\ 
+    \hline
+    3 & 2.986e-1 \\ 
+    24 & 2.199e-1 \\ 
+    27 & 3.358e-1 \\ 
+    1455 & 7.070e-2 \\ 
+    1479 & 2.618e-3 \\ 
+    1503 & 2.618e-3 \\ 
+    10753371 & 9.640e-5 \\ 
+    10834962 & 3.124e-2 \\ 
+    10834986 & 1.157e-3 \\ 
+    10835010 & 1.157e-3 \\ 
+    10836465 & 1.157e-3 \\ 
+    10836489 & 4.285e-5 \\ 
+    10836513 & 4.285e-5 \\ 
+    10837968 & 1.157e-3 \\ 
+    10837992 & 3.363e-2 \\ 
+    10838016 & 4.285e-5 \\ 
+    \hline
+\end{tabular}
+\caption{Reuse Interval Distribution for Depthwise Conv2D (block size 1)}
+\end{table}
+
+\section{Pooling}
+\begin{minted}[breaklines]{c++}
+for (int n = 0; n < N; ++n)
+  for (int c = 0; c < C; ++c)
+    for (int oh = 0; oh < OH; ++oh)
+      for (int ow = 0; ow < OW; ++ow)
+        for (int kh = 0; kh < KH; ++kh)
+          for (int kw = 0; kw < KW; ++kw)
+            O[n][c][oh][ow] += I[n][c][oh + kh][ow + kw] / SCALE;    
+\end{minted}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|l|}
+\hline
+Parameter & Value & Description \\
+\hline
+N & 1 & Batch size \\
+C & 64 & Number of channels \\
+OH & 14 & Output height \\
+OW & 14 & Output width \\
+KH & 2 & Kernel height \\
+KW & 2 & Kernel width \\
+\hline
+\end{tabular}
+\caption{Constant assignments for 2D pooling}
+\end{table}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|}
+    \hline
+    Reuse Interval & Portion \\ 
+    \hline
+    2 & 7.169e-1 \\ 
+    6 & 2.330e-1 \\ 
+    52 & 8.322e-3 \\ 
+    60 & 8.322e-3 \\ 
+    100188 & 7.489e-3 \\ 
+    100196 & 7.489e-3 \\ 
+    100290 & 8.066e-3 \\ 
+    100296 & 1.152e-3 \\ 
+    100304 & 1.152e-3 \\ 
+    100306 & 8.066e-3 \\ 
+    \hline
+\end{tabular}
+\caption{Reuse Interval Distribution for Pooling (block size 8)}
+\end{table}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|}
+    \hline
+    Reuse Interval & Portion \\ 
+    \hline
+    2 & 3.853e-1 \\ 
+    6 & 2.385e-1 \\ 
+    102 & 1.108e-1 \\ 
+    108 & 1.704e-2 \\ 
+    100238 & 9.968e-2 \\ 
+    100244 & 1.534e-2 \\ 
+    100346 & 1.309e-1 \\ 
+    100352 & 2.359e-3 \\ 
+    \hline
+\end{tabular}
+\caption{Reuse Interval Distribution for Pooling (block size 1)}
+\end{table}
+
+\section{Attention Score}
+\begin{minted}[breaklines]{c++}
+for (int b = 0; b < B; ++b)
+  for (int h = 0; h < H; ++h)
+    for (int q = 0; q < S_q; ++q)
+      for (int k = 0; k < S_k; ++k)
+        for (int d = 0; d < D; ++d)
+          S[b][h][q][k] += Q[b][h][q][d] * K[b][h][k][d];  
+\end{minted}
+
+\begin{table}[H]
+\centering
+  \begin{tabular}{|c|c|l|}
+  \hline
+  Parameter & Value & Description \\
+  \hline
+    B & 2 & Batch size \\
+    H & 8 & Number of attention heads \\
+    S\_q & 64 & Query sequence length \\
+    S\_k & 64 & Key sequence length \\
+    D & 64 & Head dimension \\
+  \hline
+  \end{tabular}
+  \caption{Constant assignments for attention score computation}
+\end{table}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|}
+    \hline
+    Reuse Interval & Portion \\ 
+    \hline
+    3 & 9.162e-1 \\ 
+    171 & 4.102e-2 \\ 
+    12267 & 4.102e-2 \\ 
+    11808747 & 5.861e-4 \\ 
+    12570795 & 5.861e-4 \\ 
+    12581379 & 5.861e-4 \\ 
+    \hline
+\end{tabular}
+\caption{Reuse Interval Distribution for Attention Score (block size 8)}
+\end{table}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|}
+    \hline
+    Reuse Interval & Portion \\ 
+    \hline
+    3 & 3.286e-1 \\ 
+    192 & 3.286e-1 \\ 
+    12288 & 3.286e-1 \\ 
+    11808768 & 4.695e-3 \\ 
+    12570816 & 4.695e-3 \\ 
+    12582723 & 4.695e-3 \\ 
+    \hline
+\end{tabular}
+\caption{Reuse Interval Distribution for Attention Score (block size 1)}
+\end{table}
+
+\section{Row-wise Softmax}
+\begin{minted}[breaklines]{c++}
+for (int b = 0; b < B; ++b)
+  for (int h = 0; h < H; ++h)
+    for (int q = 0; q < S_q; ++q)
+      for (int k = 0; k < S_k; ++k)
+        M[b][h][q] = fmaxf(M[b][h][q], S[b][h][q][k]);
+\end{minted}
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|l|}
+\hline
+Parameter & Value & Description \\
+\hline
+B & 2 & Batch size \\
+H & 8 & Number of attention heads \\
+S\_q & 64 & Query sequence length \\
+S\_k & 64 & Key sequence length \\
+\hline
+\end{tabular}
+\caption{Constant assignments for row-wise softmax max computation}
+\end{table}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|}
+    \hline
+    Reuse Interval & Portion \\ 
+    \hline
+    2 & 9.425e-1 \\ 
+    130050 & 8.845e-4 \\ 
+    131058 & 5.661e-2 \\ 
+    \hline
+\end{tabular}
+\caption{Reuse Interval Distribution for Rowwise Softmax Max (block size 8)}
+\end{table}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|}
+    \hline
+    Reuse Interval & Portion \\ 
+    \hline
+    2 & 5.185e-1 \\ 
+    130946 & 7.407e-3 \\ 
+    131072 & 4.741e-1 \\ 
+    \hline
+\end{tabular}
+\caption{Reuse Interval Distribution for Rowwise Softmax Max (block size 1)}
+\end{table}
+
+\section{Attention Context}
+\begin{minted}[breaklines]{c++}
+for (int b = 0; b < B; ++b)
+  for (int h = 0; h < H; ++h)
+    for (int q = 0; q < S_q; ++q)
+      for (int d = 0; d < D; ++d)
+        for (int k = 0; k < S_k; ++k)
+          O[b][h][q][d] += P[b][h][q][k] * V[b][h][k][d];
+\end{minted}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|l|}
+    \hline
+    Parameter & Value & Description \\
+    \hline
+    B & 2 & Batch size \\
+    H & 8 & Number of attention heads \\
+    S\_q & 64 & Query sequence length \\
+    S\_k & 64 & Key sequence length \\
+    D & 64 & Head dimension \\
+    \hline
+  \end{tabular}
+  \caption{Constant assignments for context lookup computation}
+\end{table}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|}
+    \hline
+    Reuse Interval & Portion \\ 
+    \hline
+    3 & 4.102e-2 \\ 
+    171 & 4.102e-2 \\ 
+    192 & 2.917e-1 \\ 
+    10944 & 4.102e-2 \\ 
+    11807424 & 5.861e-4 \\ 
+    12570795 & 5.861e-4 \\ 
+    12581379 & 5.861e-4 \\ 
+    \hline
+\end{tabular}
+\caption{Reuse Interval Distribution for Attention Context (block size 8)}
+\end{table}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|}
+    \hline
+    Reuse Interval & Portion \\ 
+    \hline
+    3 & 3.286e-1 \\ 
+    192 & 3.286e-1 \\ 
+    12288 & 3.286e-1 \\ 
+    11808768 & 4.695e-3 \\ 
+    12570816 & 4.695e-3 \\ 
+    12582723 & 4.695e-3 \\ 
+    \hline
+\end{tabular}
+\caption{Reuse Interval Distribution for Attention Context (block size 1)}
+\end{table}
+\end{document}

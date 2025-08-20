@@ -38,7 +38,8 @@ func.func @constant_conv2d(%arg0: memref<1x32x30x30xf32>,     // Input tensor I[
                 %weight_val = affine.load %arg1[%oc, %ic, %kh, %kw] : memref<64x32x3x3xf32>
                 
                 // Load current output value: O[n][oc][oh][ow]
-                %output_val = affine.load %arg2[%n, %oc, %oh, %ow] : memref<1x64x28x28xf32>
+                // %output_val = affine.load %arg2[%n, %oc, %oh, %ow] : memref<1x64x28x28xf32>
+                %output_val = arith.constant 0.0 : f32
                 
                 // Compute multiplication
                 %mul = arith.mulf %input_val, %weight_val : f32

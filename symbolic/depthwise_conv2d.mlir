@@ -32,7 +32,8 @@ func.func @depthwise_conv2d(%arg0: memref<?x?x?x?xf32>,     // Input tensor I[N]
               %weight_val = affine.load %arg1[%c, %kh, %kw] : memref<?x?x?xf32>
               
               // Load current output value: O[n][c][oh][ow]
-              %output_val = affine.load %arg2[%n, %c, %oh, %ow] : memref<?x?x?x?xf32>
+              // %output_val = affine.load %arg2[%n, %c, %oh, %ow] : memref<?x?x?x?xf32>
+              %output_val = arith.constant 0.0 : f32
               
               // Compute multiplication
               %mul = arith.mulf %input_val, %weight_val : f32

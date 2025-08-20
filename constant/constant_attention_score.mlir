@@ -43,7 +43,8 @@ func.func @constant_attention_score(%arg0: memref<2x8x64x64xf32>,     // Query t
             %key_val = affine.load %arg1[%b, %h, %k, %d] : memref<2x8x64x64xf32>
             
             // Load current score value: S[b][h][q][k]
-            %score_val = affine.load %arg2[%b, %h, %q, %k] : memref<2x8x64x64xf32>
+            // %score_val = affine.load %arg2[%b, %h, %q, %k] : memref<2x8x64x64xf32>
+            %score_val = arith.constant 0.0 : f32
             
             // Compute multiplication: Q[b][h][q][d] * K[b][h][k][d]
             %mul = arith.mulf %query_val, %key_val : f32

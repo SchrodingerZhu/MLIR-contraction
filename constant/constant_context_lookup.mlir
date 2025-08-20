@@ -43,7 +43,8 @@ func.func @constant_context_lookup(%arg0: memref<2x8x64x64xf32>,     // Probabil
             %value_val = affine.load %arg1[%b, %h, %k, %d] : memref<2x8x64x64xf32>
             
             // Load current output value: O[b][h][q][d]
-            %output_val = affine.load %arg2[%b, %h, %q, %d] : memref<2x8x64x64xf32>
+            // %output_val = affine.load %arg2[%b, %h, %q, %d] : memref<2x8x64x64xf32>
+            %output_val = arith.constant 0.0 : f32
             
             // Compute multiplication: P[b][h][q][k] * V[b][h][k][d]
             %mul = arith.mulf %prob_val, %value_val : f32

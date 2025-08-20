@@ -27,7 +27,8 @@ func.func @pooling(%arg0: memref<?x?x?x?xf32>,     // Input tensor I[N][C][IH][I
               %input_val = affine.load %arg0[%n, %c, %oh + %kh, %ow + %kw] : memref<?x?x?x?xf32>
               
               // Load current output value: O[n][c][oh][ow]
-              %output_val = affine.load %arg1[%n, %c, %oh, %ow] : memref<?x?x?x?xf32>
+              // %output_val = affine.load %arg1[%n, %c, %oh, %ow] : memref<?x?x?x?xf32>
+              %output_val = arith.constant 0.0 : f32
               
               // Compute accumulation: O[n][c][oh][ow] += I[n][c][oh + kh][ow + kw]
               %add = arith.addf %output_val, %input_val : f32

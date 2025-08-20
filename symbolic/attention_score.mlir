@@ -29,7 +29,8 @@ func.func @attention_score(%arg0: memref<?x?x?x?xf32>,     // Query tensor Q[B][
             %key_val = affine.load %arg1[%b, %h, %k, %d] : memref<?x?x?x?xf32>
             
             // Load current score value: S[b][h][q][k]
-            %score_val = affine.load %arg2[%b, %h, %q, %k] : memref<?x?x?x?xf32>
+            // %score_val = affine.load %arg2[%b, %h, %q, %k] : memref<?x?x?x?xf32>
+            %score_val = arith.constant 0.0 : f32
             
             // Compute multiplication: Q[b][h][q][d] * K[b][h][k][d]
             %mul = arith.mulf %query_val, %key_val : f32
