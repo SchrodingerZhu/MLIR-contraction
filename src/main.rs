@@ -20,6 +20,7 @@ struct Cache {
     ri_distogram: FxHashMap<usize, usize>,
     timer: usize,
     block_size: usize,
+    start_recording: bool,
 }
 
 impl Cache {
@@ -29,6 +30,7 @@ impl Cache {
             ri_distogram: FxHashMap::default(),
             timer: 0,
             block_size,
+            start_recording: false,
         }
     }
 
@@ -38,10 +40,12 @@ impl Cache {
         addr.0[last_pos] /= self.block_size;
         match self.lastest_access.entry(addr) {
             Entry::Occupied(mut entry) => {
-                self.ri_distogram
-                    .entry(self.timer - entry.get())
-                    .and_modify(|v| *v += 1)
-                    .or_insert(1);
+                if self.start_recording {
+                    self.ri_distogram
+                        .entry(self.timer - entry.get())
+                        .and_modify(|v| *v += 1)
+                        .or_insert(1);
+                }
                 entry.insert(self.timer);
             }
             Entry::Vacant(entry) => {
@@ -54,9 +58,9 @@ impl Cache {
 
 #[allow(non_snake_case)]
 fn attention_context(cache: &mut Cache, B: usize, H: usize, S_q: usize, D: usize, S_k: usize) {
-    const O : usize = 0;
-    const P : usize = 1;
-    const V : usize = 2;
+    const O: usize = 0;
+    const P: usize = 1;
+    const V: usize = 2;
 
     for b in 0..B {
         for h in 0..H {
@@ -75,9 +79,9 @@ fn attention_context(cache: &mut Cache, B: usize, H: usize, S_q: usize, D: usize
 
 #[allow(non_snake_case)]
 fn attention_score(cache: &mut Cache, B: usize, H: usize, S_q: usize, S_k: usize, D: usize) {
-    const Q : usize = 0;
-    const K : usize = 1;
-    const S : usize = 2;
+    const Q: usize = 0;
+    const K: usize = 1;
+    const S: usize = 2;
 
     for b in 0..B {
         for h in 0..H {
@@ -95,10 +99,19 @@ fn attention_score(cache: &mut Cache, B: usize, H: usize, S_q: usize, S_k: usize
 }
 
 #[allow(non_snake_case)]
-fn conv2d(cache: &mut Cache, N: usize, OC: usize, IC: usize, OH: usize, OW: usize, KH: usize, KW: usize) {
-    const I : usize = 0;
-    const W : usize = 1;
-    const O : usize = 2;
+fn conv2d(
+    cache: &mut Cache,
+    N: usize,
+    OC: usize,
+    IC: usize,
+    OH: usize,
+    OW: usize,
+    KH: usize,
+    KW: usize,
+) {
+    const I: usize = 0;
+    const W: usize = 1;
+    const O: usize = 2;
 
     for n in 0..N {
         for oc in 0..OC {
@@ -120,10 +133,18 @@ fn conv2d(cache: &mut Cache, N: usize, OC: usize, IC: usize, OH: usize, OW: usiz
 }
 
 #[allow(non_snake_case)]
-fn depthwise_conv2d(cache: &mut Cache, N: usize, C: usize, OH: usize, OW: usize, KH: usize, KW: usize) {
-    const I : usize = 0;
-    const W : usize = 1;
-    const O : usize = 2;
+fn depthwise_conv2d(
+    cache: &mut Cache,
+    N: usize,
+    C: usize,
+    OH: usize,
+    OW: usize,
+    KH: usize,
+    KW: usize,
+) {
+    const I: usize = 0;
+    const W: usize = 1;
+    const O: usize = 2;
 
     for n in 0..N {
         for c in 0..C {
@@ -144,8 +165,8 @@ fn depthwise_conv2d(cache: &mut Cache, N: usize, C: usize, OH: usize, OW: usize,
 
 #[allow(non_snake_case)]
 fn pooling(cache: &mut Cache, N: usize, C: usize, OH: usize, OW: usize, KH: usize, KW: usize) {
-    const I : usize = 0;
-    const O : usize = 1;
+    const I: usize = 0;
+    const O: usize = 1;
 
     for n in 0..N {
         for c in 0..C {
@@ -165,8 +186,8 @@ fn pooling(cache: &mut Cache, N: usize, C: usize, OH: usize, OW: usize, KH: usiz
 
 #[allow(non_snake_case)]
 fn rowwise_softmax_max(cache: &mut Cache, B: usize, H: usize, S_q: usize, S_k: usize) {
-    const S : usize = 0;
-    const M : usize = 1;
+    const S: usize = 0;
+    const M: usize = 1;
 
     for b in 0..B {
         for h in 0..H {
@@ -182,9 +203,9 @@ fn rowwise_softmax_max(cache: &mut Cache, B: usize, H: usize, S_q: usize, S_k: u
 
 #[allow(non_snake_case)]
 fn batched_gemm(cache: &mut Cache, B: usize, N: usize) {
-    const A : usize = 0;
-    const B_TENSOR : usize = 1;
-    const C : usize = 2;
+    const A: usize = 0;
+    const B_TENSOR: usize = 1;
+    const C: usize = 2;
 
     for b in 0..B {
         for i in 0..N {
@@ -201,9 +222,9 @@ fn batched_gemm(cache: &mut Cache, B: usize, N: usize) {
 
 #[allow(non_snake_case)]
 fn matrix_matrix(cache: &mut Cache, N: usize) {
-    const A : usize = 0;
-    const B : usize = 1;
-    const C : usize = 2;
+    const A: usize = 0;
+    const B: usize = 1;
+    const C: usize = 2;
 
     for i in 0..N {
         for k in 0..N {
@@ -218,9 +239,9 @@ fn matrix_matrix(cache: &mut Cache, N: usize) {
 
 #[allow(non_snake_case)]
 fn matrix_vector(cache: &mut Cache, N: usize) {
-    const A : usize = 0;
-    const B : usize = 1;
-    const C : usize = 2;
+    const A: usize = 0;
+    const B: usize = 1;
+    const C: usize = 2;
 
     for i in 0..N {
         for j in 0..N {
@@ -233,8 +254,8 @@ fn matrix_vector(cache: &mut Cache, N: usize) {
 
 #[allow(unused)]
 fn main() {
-    use rayon::prelude::*;
     use indicatif::ParallelProgressIterator;
+    use rayon::prelude::*;
     tracing_subscriber::fmt::init();
 
     let attention_context_runner = |cache: &mut Cache| {
@@ -273,9 +294,7 @@ fn main() {
         matrix_vector(cache, 512);
     };
 
-    let repeat = 10;
-
-    let test_cases : &[(&str, fn(&mut Cache), usize)] = &[
+    let test_cases: &[(&str, fn(&mut Cache), usize)] = &[
         ("Attention Context", attention_context_runner, 1),
         ("Attention Context", attention_context_runner, 8),
         ("Attention Score", attention_score_runner, 1),
@@ -293,35 +312,41 @@ fn main() {
         // ("Matrix Vector", matrix_vector_runner),
     ];
 
-    test_cases.par_iter().progress().for_each(|((name, runner, block_size))| {
-        let mut cache = Cache::new(*block_size);
-        for _ in 0..repeat {
+    test_cases
+        .par_iter()
+        .progress()
+        .for_each(|((name, runner, block_size))| {
+            let mut cache = Cache::new(*block_size);
             runner(&mut cache);
-        }
-        let mut histogram = cache.ri_distogram.iter().map(|(k, v)| (*k, *v as f64)).collect::<Vec<_>>();
-        let total_access = histogram.iter().map(|(_, v)| *v).sum::<f64>();
-        histogram.iter_mut().for_each(|(_, v)| *v /= total_access);
-        histogram.sort_by(|a, b| a.0.cmp(&b.0));
-        tracing::trace!("histogram: {:?}", histogram);
+            cache.start_recording = true;
+            runner(&mut cache);
+            let mut histogram = cache
+                .ri_distogram
+                .iter()
+                .map(|(k, v)| (*k, *v as f64))
+                .collect::<Vec<_>>();
+            let total_access = histogram.iter().map(|(_, v)| *v).sum::<f64>() / 2.0;
+            histogram.iter_mut().for_each(|(_, v)| *v /= total_access);
+            histogram.sort_by(|a, b| a.0.cmp(&b.0));
+            tracing::trace!("histogram: {:?}", histogram);
 
-        let mut table = String::new();
-        table.push_str("\\begin{table}[H]\n");
-        table.push_str("\\centering\n");
-        table.push_str("\\begin{tabular}{|c|c|}\n");
-        table.push_str("    \\hline\n");
-        table.push_str("    Reuse Interval & Portion \\\\ \n");
-        table.push_str("    \\hline\n");
-        for (k, v) in histogram {
-            table.push_str(&format!("    {} & {:.3e} \\\\ \n", k, v));
-        }
-        table.push_str("    \\hline\n");
-        table.push_str("\\end{tabular}\n");
-        table.push_str("\\caption{Reuse Interval Distribution for ");
-        table.push_str(name);
-        table.push_str(&format!(" (block size {})", block_size));
-        table.push_str("}\n");
-        table.push_str("\\end{table}\n");
-        println!("{}", table);
-    });
-
+            let mut table = String::new();
+            table.push_str("\\begin{table}[H]\n");
+            table.push_str("\\centering\n");
+            table.push_str("\\begin{tabular}{|c|c|}\n");
+            table.push_str("    \\hline\n");
+            table.push_str("    Reuse Interval & Portion \\\\ \n");
+            table.push_str("    \\hline\n");
+            for (k, v) in histogram {
+                table.push_str(&format!("    {} & {:.3e} \\\\ \n", k, v));
+            }
+            table.push_str("    \\hline\n");
+            table.push_str("\\end{tabular}\n");
+            table.push_str("\\caption{Reuse Interval Distribution for ");
+            table.push_str(name);
+            table.push_str(&format!(" (block size {})", block_size));
+            table.push_str("}\n");
+            table.push_str("\\end{table}\n");
+            println!("{}", table);
+        });
 }
