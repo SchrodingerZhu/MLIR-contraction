@@ -325,7 +325,7 @@ fn main() {
                 .iter()
                 .map(|(k, v)| (*k, *v as f64))
                 .collect::<Vec<_>>();
-            let total_access = histogram.iter().map(|(_, v)| *v).sum::<f64>() / 2.0;
+            let total_access = histogram.iter().map(|(_, v)| *v).sum::<f64>();
             histogram.iter_mut().for_each(|(_, v)| *v /= total_access);
             histogram.sort_by(|a, b| a.0.cmp(&b.0));
             tracing::trace!("histogram: {:?}", histogram);
