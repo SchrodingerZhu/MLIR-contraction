@@ -58,4 +58,5 @@
 *.fls
 
 _minted
+_minted-data
 *.synctex
