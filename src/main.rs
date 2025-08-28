@@ -200,20 +200,34 @@ fn rowwise_softmax_max(cache: &mut Cache, B: usize, H: usize, S_q: usize, S_k: u
         }
     }
 }
+#[allow(non_snake_case)]
+fn tensor3d_vector_contraction(cache: &mut Cache, M: usize, N: usize, K: usize) {
+    const A: usize = 0;
+    const B: usize = 1;
+    const C: usize = 2;
+    for i in 0..M {
+        for j in 0..N {
+            for k in 0..K {
+                cache.access([A, i, j, k].into_iter());
+                cache.access([B, k].into_iter());
+                cache.access([C, i, j].into_iter());
+            }
+        }
+    }
+}
 
 #[allow(non_snake_case)]
-fn batched_gemm(cache: &mut Cache, B: usize, N: usize) {
+fn tensor4d_contraction(cache: &mut Cache, M: usize, N: usize, K: usize, L: usize) {
     const A: usize = 0;
-    const B_TENSOR: usize = 1;
+    const B: usize = 1;
     const C: usize = 2;
-
-    for b in 0..B {
-        for i in 0..N {
-            for j in 0..N {
-                for k in 0..N {
-                    cache.access([A, b, i, k].into_iter());
-                    cache.access([B_TENSOR, b, k, j].into_iter());
-                    cache.access([C, b, i, j].into_iter());
+    for i in 0..M {
+        for j in 0..N {
+            for k in 0..K {
+                for l in 0..L {
+                    cache.access([A, i, k, l, j].into_iter());
+                    cache.access([B, k, l].into_iter());
+                    cache.access([C, i, j].into_iter());
                 }
             }
         }
@@ -221,14 +235,13 @@ fn batched_gemm(cache: &mut Cache, B: usize, N: usize) {
 }
 
 #[allow(non_snake_case)]
-fn matrix_matrix(cache: &mut Cache, N: usize) {
+fn matrix_matrix_contraction(cache: &mut Cache, M: usize, N: usize, K: usize) {
     const A: usize = 0;
     const B: usize = 1;
     const C: usize = 2;
-
-    for i in 0..N {
+    for i in 0..M {
         for k in 0..N {
-            for j in 0..N {
+            for j in 0..K {
                 cache.access([A, i, j].into_iter());
                 cache.access([B, j, k].into_iter());
                 cache.access([C, i, k].into_iter());
@@ -238,16 +251,33 @@ fn matrix_matrix(cache: &mut Cache, N: usize) {
 }
 
 #[allow(non_snake_case)]
-fn matrix_vector(cache: &mut Cache, N: usize) {
+fn matrix_vector_contraction(cache: &mut Cache, M: usize, N: usize) {
     const A: usize = 0;
     const B: usize = 1;
     const C: usize = 2;
-
-    for i in 0..N {
+    for i in 0..M {
         for j in 0..N {
             cache.access([A, i, j].into_iter());
             cache.access([B, j].into_iter());
             cache.access([C, i].into_iter());
+        }
+    }
+}
+
+#[allow(non_snake_case)]
+fn batched_gemm(cache: &mut Cache, P: usize, M: usize, N: usize, K: usize) {
+    const A: usize = 0;
+    const B: usize = 1;
+    const C: usize = 2;
+    for p in 0..P {
+        for i in 0..M {
+            for j in 0..N {
+                for k in 0..K {
+                    cache.access([A, p, i, k].into_iter());
+                    cache.access([B, p, k, j].into_iter());
+                    cache.access([C, p, i, j].into_iter());
+                }
+            }
         }
     }
 }
@@ -282,17 +312,26 @@ fn main() {
         rowwise_softmax_max(cache, 2, 8, 64, 64);
     };
 
+    let tensor3d_vector_contraction_runner = |cache: &mut Cache| {
+        tensor3d_vector_contraction(cache, 96, 64, 48);
+    };
+
+    let tensor4d_contraction_runner = |cache: &mut Cache| {
+        tensor4d_contraction(cache, 80, 64, 48, 32);
+    };
+
+    let matrix_matrix_contraction_runner = |cache: &mut Cache| {
+        matrix_matrix_contraction(cache, 256, 192, 160);
+    };
+
+    let matrix_vector_contraction_runner = |cache: &mut Cache| {
+        matrix_vector_contraction(cache, 3840, 4096);
+    };
+
     let batched_gemm_runner = |cache: &mut Cache| {
-        batched_gemm(cache, 128, 128);
+        batched_gemm(cache, 32, 64, 96, 80);
     };
 
-    let matrix_matrix_runner = |cache: &mut Cache| {
-        matrix_matrix(cache, 256);
-    };
-
-    let matrix_vector_runner = |cache: &mut Cache| {
-        matrix_vector(cache, 512);
-    };
 
     let test_cases: &[(&str, fn(&mut Cache), usize)] = &[
         ("Attention Context", attention_context_runner, 1),
@@ -307,10 +346,17 @@ fn main() {
         ("Pooling", pooling_runner, 8),
         ("Rowwise Softmax Max", rowwise_softmax_max_runner, 1),
         ("Rowwise Softmax Max", rowwise_softmax_max_runner, 8),
-        // ("Batched GEMM", batched_gemm_runner),
-        // ("Matrix Matrix", matrix_matrix_runner),
-        // ("Matrix Vector", matrix_vector_runner),
-    ];
+        ("Tensor3D Vector Contraction", tensor3d_vector_contraction_runner, 1),
+        ("Tensor3D Vector Contraction", tensor3d_vector_contraction_runner, 8),
+        ("Tensor4D Contraction", tensor4d_contraction_runner, 1),
+        ("Tensor4D Contraction", tensor4d_contraction_runner, 8),
+        ("Matrix Matrix Contraction", matrix_matrix_contraction_runner, 1),
+        ("Matrix Matrix Contraction", matrix_matrix_contraction_runner, 8),
+        ("Matrix Vector Contraction", matrix_vector_contraction_runner, 1),
+        ("Matrix Vector Contraction", matrix_vector_contraction_runner, 8),
+        ("Batched GEMM", batched_gemm_runner, 1),
+        ("Batched GEMM", batched_gemm_runner, 8),
+    ];  
 
     test_cases
         .par_iter()
