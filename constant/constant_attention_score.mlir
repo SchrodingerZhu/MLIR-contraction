@@ -7,10 +7,10 @@
 //     \hline
 //     Parameter & Value & Description \\
 //     \hline
-//     B & 2 & Batch size \\
-//     H & 8 & Number of attention heads \\
-//     S_q & 64 & Query sequence length \\
-//     S_k & 64 & Key sequence length \\
+//     B & 4 & Batch size \\
+//     H & 16 & Number of attention heads \\
+//     S_q & 512 & Query sequence length \\
+//     S_k & 512 & Key sequence length \\
 //     D & 64 & Head dimension \\
 //     \hline
 //   \end{tabular}
@@ -25,25 +25,25 @@
 //         for (int d = 0; d < D; ++d)
 //           S[b][h][q][k] += Q[b][h][q][d] * K[b][h][k][d];
 
-func.func @constant_attention_score(%arg0: memref<2x8x64x64xf32>,     // Query tensor Q[2][8][64][64]
-                                    %arg1: memref<2x8x64x64xf32>,     // Key tensor K[2][8][64][64]
-                                    %arg2: memref<2x8x64x64xf32>) {   // Score tensor S[2][8][64][64]
+func.func @constant_attention_score(%arg0: memref<4x16x512x64xf32>,     // Query tensor Q[4][16][512][64]
+                                    %arg1: memref<4x16x512x64xf32>,     // Key tensor K[4][16][512][64]
+                                    %arg2: memref<4x16x512x512xf32>) {   // Score tensor S[4][16][512][512]
   
   // Nested affine loops with constant bounds
   // This implements the query-key dot product for attention scores
-  affine.for %b = 0 to 2 {
-    affine.for %h = 0 to 8 {
-      affine.for %q = 0 to 64 {
-        affine.for %k = 0 to 64 {
+  affine.for %b = 0 to 4 {
+    affine.for %h = 0 to 16 {
+      affine.for %q = 0 to 512 {
+        affine.for %k = 0 to 512 {
           affine.for %d = 0 to 64 {
             // Load query value: Q[b][h][q][d]
-            %query_val = affine.load %arg0[%b, %h, %q, %d] : memref<2x8x64x64xf32>
+            %query_val = affine.load %arg0[%b, %h, %q, %d] : memref<4x16x512x64xf32>
             
             // Load key value: K[b][h][k][d]
-            %key_val = affine.load %arg1[%b, %h, %k, %d] : memref<2x8x64x64xf32>
+            %key_val = affine.load %arg1[%b, %h, %k, %d] : memref<4x16x512x64xf32>
             
             // Load current score value: S[b][h][q][k]
-            // %score_val = affine.load %arg2[%b, %h, %q, %k] : memref<2x8x64x64xf32>
+            // %score_val = affine.load %arg2[%b, %h, %q, %k] : memref<4x16x512x512xf32>
             %score_val = arith.constant 0.0 : f32
             
             // Compute multiplication: Q[b][h][q][d] * K[b][h][k][d]
@@ -53,7 +53,7 @@ func.func @constant_attention_score(%arg0: memref<2x8x64x64xf32>,     // Query t
             %add = arith.addf %score_val, %mul : f32
             
             // Store result back to score tensor
-            affine.store %add, %arg2[%b, %h, %q, %k] : memref<2x8x64x64xf32>
+            affine.store %add, %arg2[%b, %h, %q, %k] : memref<4x16x512x512xf32>
           }
         }
       }
