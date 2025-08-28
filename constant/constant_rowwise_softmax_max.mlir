@@ -22,7 +22,7 @@
 //     for (int q = 0; q < S_q; ++q)
 //       for (int k = 0; k < S_k; ++k)
 //         M[b][h][q] = fmaxf(M[b][h][q], S[b][h][q][k]);
-
+module attributes { "simulation.prologue" = "volatile double ARRAY_0[4][16][512][512], ARRAY_1[4][16][512];" } {
 func.func @constant_rowwise_softmax_max(%arg0: memref<4x16x512x512xf32>,     // Score tensor S[4][16][512][512]
                                         %arg1: memref<4x16x512xf32>) {      // Max tensor M[4][16][512]
   
@@ -50,4 +50,5 @@ func.func @constant_rowwise_softmax_max(%arg0: memref<4x16x512x512xf32>,     // 
   }
   
   return
+}
 }

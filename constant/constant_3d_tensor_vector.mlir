@@ -1,4 +1,4 @@
-module {
+module attributes { "simulation.prologue" = "volatile double ARRAY_0[96][64][48], ARRAY_1[48], ARRAY_2[96][64];" } {
     func.func @tensor3d_vector_contraction(%A: memref<96x64x48xf64>, %B: memref<48xf64>, %C: memref<96x64xf64>) {
         // C[i][j] = A[i][j][k] * B[k]
         affine.for %i = 0 to 96 {

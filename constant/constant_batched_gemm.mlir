@@ -1,4 +1,4 @@
-module {
+module attributes { "simulation.prologue" = "volatile double ARRAY_0[32][64][128], ARRAY_1[32][128][96], ARRAY_2[32][64][96];" } {
     func.func @batched_gemm(%A: memref<32x64x128xf64>, %B: memref<32x128x96xf64>, %C: memref<32x64x96xf64>) {
         // C[p][i][j] = A[p][i][k] * B[p][k][j]
         affine.for %p = 0 to 32 {

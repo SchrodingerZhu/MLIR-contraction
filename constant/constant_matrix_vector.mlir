@@ -1,4 +1,4 @@
-module {
+module attributes { "simulation.prologue" = "volatile double ARRAY_0[512][1024], ARRAY_1[1024], ARRAY_2[512];" } {
     func.func @matrix_vector_contraction(%A: memref<512x1024xf64>, %B: memref<1024xf64>, %C: memref<512xf64>) {
         // C[i] = A[i][j] * B[j]
         affine.for %i = 0 to 512 {

@@ -25,6 +25,7 @@
 //         for (int d = 0; d < D; ++d)
 //           S[b][h][q][k] += Q[b][h][q][d] * K[b][h][k][d];
 
+module attributes { "simulation.prologue" = "volatile double ARRAY_0[4][16][512][64], ARRAY_1[4][16][512][64], ARRAY_2[4][16][512][512];" } {
 func.func @constant_attention_score(%arg0: memref<4x16x512x64xf32>,     // Query tensor Q[4][16][512][64]
                                     %arg1: memref<4x16x512x64xf32>,     // Key tensor K[4][16][512][64]
                                     %arg2: memref<4x16x512x512xf32>) {   // Score tensor S[4][16][512][512]
@@ -61,4 +62,5 @@ func.func @constant_attention_score(%arg0: memref<4x16x512x64xf32>,     // Query
   }
   
   return
+}
 }

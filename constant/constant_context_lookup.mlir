@@ -25,6 +25,7 @@
 //         for (int k = 0; k < S_k; ++k)
 //           O[b][h][q][d] += P[b][h][q][k] * V[b][h][k][d];
 
+module attributes { "simulation.prologue" = "volatile double ARRAY_0[4][16][512][512], ARRAY_1[4][16][512][64], ARRAY_2[4][16][512][64];" } {
 func.func @constant_context_lookup(%arg0: memref<4x16x512x512xf32>,     // Probability tensor P[4][16][512][512]
                                    %arg1: memref<4x16x512x64xf32>,     // Value tensor V[4][16][512][64]
                                    %arg2: memref<4x16x512x64xf32>) {   // Output tensor O[4][16][512][64]
@@ -61,4 +62,5 @@ func.func @constant_context_lookup(%arg0: memref<4x16x512x512xf32>,     // Proba
   }
   
   return
+}
 }
