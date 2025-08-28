@@ -9,8 +9,8 @@
 //     \hline
 //     B & 4 & Batch size \\
 //     H & 16 & Number of attention heads \\
-//     S_q & 512 & Query sequence length \\
-//     S_k & 512 & Key sequence length \\
+//     S_q & 256 & Query sequence length \\
+//     S_k & 256 & Key sequence length \\
 //     D & 64 & Head dimension \\
 //     \hline
 //   \end{tabular}
@@ -25,26 +25,26 @@
 //         for (int k = 0; k < S_k; ++k)
 //           O[b][h][q][d] += P[b][h][q][k] * V[b][h][k][d];
 
-module attributes { "simulation.prologue" = "volatile double ARRAY_0[4][16][512][512], ARRAY_1[4][16][512][64], ARRAY_2[4][16][512][64];" } {
-func.func @constant_context_lookup(%arg0: memref<4x16x512x512xf32>,     // Probability tensor P[4][16][512][512]
-                                   %arg1: memref<4x16x512x64xf32>,     // Value tensor V[4][16][512][64]
-                                   %arg2: memref<4x16x512x64xf32>) {   // Output tensor O[4][16][512][64]
+module attributes { "simulation.prologue" = "volatile double ARRAY_0[4][16][256][256], ARRAY_1[4][16][256][64], ARRAY_2[4][16][256][64];" } {
+func.func @constant_context_lookup(%arg0: memref<4x16x256x256xf32>,     // Probability tensor P[4][16][256][256]
+                                   %arg1: memref<4x16x256x64xf32>,     // Value tensor V[4][16][256][64]
+                                   %arg2: memref<4x16x256x64xf32>) {   // Output tensor O[4][16][256][64]
   
   // Nested affine loops with constant bounds
   // This implements the context lookup: weighted sum of value vectors using attention probabilities
   affine.for %b = 0 to 4 {
     affine.for %h = 0 to 16 {
-      affine.for %q = 0 to 512 {
+      affine.for %q = 0 to 256 {
         affine.for %d = 0 to 64 {
-          affine.for %k = 0 to 512 {
+          affine.for %k = 0 to 256 {
             // Load probability value: P[b][h][q][k]
-            %prob_val = affine.load %arg0[%b, %h, %q, %k] : memref<4x16x512x512xf32>
+            %prob_val = affine.load %arg0[%b, %h, %q, %k] : memref<4x16x256x256xf32>
             
             // Load value vector element: V[b][h][k][d]
-            %value_val = affine.load %arg1[%b, %h, %k, %d] : memref<4x16x512x64xf32>
+            %value_val = affine.load %arg1[%b, %h, %k, %d] : memref<4x16x256x64xf32>
             
             // Load current output value: O[b][h][q][d]
-            // %output_val = affine.load %arg2[%b, %h, %q, %d] : memref<4x16x512x64xf32>
+            // %output_val = affine.load %arg2[%b, %h, %q, %d] : memref<4x16x256x64xf32>
             %output_val = arith.constant 0.0 : f32
             
             // Compute multiplication: P[b][h][q][k] * V[b][h][k][d]
@@ -54,7 +54,7 @@ func.func @constant_context_lookup(%arg0: memref<4x16x512x512xf32>,     // Proba
             %add = arith.addf %output_val, %mul : f32
             
             // Store result back to output tensor
-            affine.store %add, %arg2[%b, %h, %q, %d] : memref<4x16x512x64xf32>
+            affine.store %add, %arg2[%b, %h, %q, %d] : memref<4x16x256x64xf32>
           }
         }
       }
